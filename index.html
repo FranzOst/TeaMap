@@ -1190,7 +1190,7 @@
       L.control.scale({ position: 'bottomright', metric: true, imperial: false }).addTo(map);
 
       // Grey out everything outside China
-      addChinaMask();
+      addChinaMask().catch(function(e) { console.warn('China mask failed', e); });
 
       // Placement click
       map.on('click', function(e) {
@@ -1211,6 +1211,7 @@
       var geom;
       try {
         var resp = await fetch('china-boundary.json');
+        if (!resp.ok) throw new Error('HTTP ' + resp.status);
         geom = await resp.json();
       } catch (e) {
         console.warn('Failed to load china-boundary.json', e);
