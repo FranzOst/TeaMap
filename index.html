@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
   <title>Chinese Tea Origins Map</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
     integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
@@ -408,19 +409,6 @@
       padding: 8px 0;
     }
 
-    /* ── City labels ── */
-    .city-label span {
-      font-family: 'Inter', sans-serif;
-      font-size: 11px;
-      font-weight: 500;
-      color: #555;
-      white-space: nowrap;
-      text-shadow: 1px 1px 2px white, -1px -1px 2px white, 1px -1px 2px white, -1px 1px 2px white;
-      pointer-events: none;
-      margin-left: 4px;
-      margin-top: -5px;
-      display: block;
-    }
 
     /* ── Marker hover ── */
     .tea-marker { cursor: pointer; }
@@ -914,15 +902,6 @@
       }
     ];
 
-    // ═══════════════════════════════════════════
-    //  SUPABASE SETUP
-    //  -----------------------------------------------
-    //  Replace these with your Supabase project credentials.
-    //  1. Create a free project at https://supabase.com
-    //  2. Go to Settings > API and copy the URL + anon key
-    //  3. See the SQL setup instructions at the bottom of this script
-    // ═══════════════════════════════════════════
-
     const SUPABASE_URL = 'https://mdmnkhhmazvxzoalppze.supabase.co';   // <-- Replace with your Supabase URL
     const SUPABASE_ANON_KEY = 'sb_publishable_XVdkgH08vrf5-r7S8FWyTQ_PU8vmDsF';                 // <-- Replace with your anon/public key
     const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -1156,22 +1135,6 @@
     //  MAP SETUP
     // ═══════════════════════════════════════════
 
-    // Major Chinese cities for sparse labeling on clean map layers
-    var CITY_LABELS = [
-      { name: 'Beijing', cn: '北京', lat: 39.90, lng: 116.40 },
-      { name: 'Shanghai', cn: '上海', lat: 31.23, lng: 121.47 },
-      { name: 'Guangzhou', cn: '广州', lat: 23.13, lng: 113.26 },
-      { name: 'Chengdu', cn: '成都', lat: 30.57, lng: 104.07 },
-      { name: 'Kunming', cn: '昆明', lat: 25.04, lng: 102.68 },
-      { name: 'Hangzhou', cn: '杭州', lat: 30.27, lng: 120.15 },
-      { name: 'Fuzhou', cn: '福州', lat: 26.07, lng: 119.30 },
-      { name: 'Wuhan', cn: '武汉', lat: 30.59, lng: 114.31 },
-      { name: "Xi'an", cn: '西安', lat: 34.26, lng: 108.94 },
-      { name: 'Lhasa', cn: '拉萨', lat: 29.65, lng: 91.17 },
-      { name: 'Urumqi', cn: '乌鲁木齐', lat: 43.83, lng: 87.62 },
-      { name: 'Harbin', cn: '哈尔滨', lat: 45.75, lng: 126.65 },
-    ];
-    var cityLayerGroup = null;
 
     function initMap() {
       map = L.map('map', {
@@ -1212,31 +1175,6 @@
 
       L.control.zoom({ position: 'topright' }).addTo(map);
       L.control.scale({ position: 'bottomright', metric: true, imperial: false }).addTo(map);
-
-      // Sparse city labels for clean map layers
-      cityLayerGroup = L.layerGroup();
-      CITY_LABELS.forEach(function(city) {
-        L.marker([city.lat, city.lng], {
-          icon: L.divIcon({
-            className: 'city-label',
-            html: '<span>' + city.name + '</span>',
-            iconSize: [0, 0],
-            iconAnchor: [0, 0]
-          }),
-          interactive: false,
-          pane: 'tooltipPane'
-        }).addTo(cityLayerGroup);
-      });
-      cityLayerGroup.addTo(map);
-
-      // Hide city labels on the OpenTopoMap layer (it has its own)
-      map.on('baselayerchange', function(e) {
-        if (e.name === 'Topographic (detailed)') {
-          map.removeLayer(cityLayerGroup);
-        } else {
-          cityLayerGroup.addTo(map);
-        }
-      });
 
       // Grey out everything outside China
       addChinaMask();
@@ -1878,60 +1816,6 @@
         }
       });
     });
-    // ═══════════════════════════════════════════
-    //  SUPABASE SQL SETUP (run once in Supabase SQL Editor)
-    // ═══════════════════════════════════════════
-    //
-    //  1. Create a free project at https://supabase.com
-    //  2. Go to SQL Editor and run the following:
-    //
-    //  -- Teas table
-    //  CREATE TABLE teas (
-    //    id TEXT NOT NULL,
-    //    user_id UUID NOT NULL DEFAULT auth.uid(),
-    //    name TEXT NOT NULL,
-    //    chinese_name TEXT DEFAULT '',
-    //    type TEXT NOT NULL CHECK (type IN ('green','black','oolong','white','puerh','yellow')),
-    //    province TEXT DEFAULT '',
-    //    region TEXT DEFAULT '',
-    //    lat DOUBLE PRECISION NOT NULL,
-    //    lng DOUBLE PRECISION NOT NULL,
-    //    elevation DOUBLE PRECISION,
-    //    flavor TEXT DEFAULT '',
-    //    description TEXT DEFAULT '',
-    //    notes TEXT DEFAULT '',
-    //    starter BOOLEAN DEFAULT FALSE,
-    //    edited BOOLEAN DEFAULT FALSE,
-    //    created_at TIMESTAMPTZ DEFAULT now(),
-    //    updated_at TIMESTAMPTZ DEFAULT now(),
-    //    PRIMARY KEY (id, user_id)
-    //  );
-    //
-    //  -- Track which starter teas a user has hidden
-    //  CREATE TABLE deleted_starters (
-    //    user_id UUID NOT NULL DEFAULT auth.uid(),
-    //    starter_id TEXT NOT NULL,
-    //    PRIMARY KEY (user_id, starter_id)
-    //  );
-    //
-    //  -- Enable Row Level Security
-    //  ALTER TABLE teas ENABLE ROW LEVEL SECURITY;
-    //  ALTER TABLE deleted_starters ENABLE ROW LEVEL SECURITY;
-    //
-    //  CREATE POLICY "Users manage own teas" ON teas
-    //    FOR ALL USING (auth.uid() = user_id)
-    //    WITH CHECK (auth.uid() = user_id);
-    //
-    //  CREATE POLICY "Users manage own deleted starters" ON deleted_starters
-    //    FOR ALL USING (auth.uid() = user_id)
-    //    WITH CHECK (auth.uid() = user_id);
-    //
-    //  3. Go to Authentication > Settings and enable Email provider
-    //  4. Copy your Project URL and anon key from Settings > API
-    //  5. Paste them into SUPABASE_URL and SUPABASE_ANON_KEY above
-    //
-    //  Deploy: Push to GitHub and enable GitHub Pages in repo Settings > Pages
-    //
   </script>
 </body>
 </html>
